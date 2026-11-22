@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Open standalone browser utilities from one sidebar." />
+    <title>Web Utilities</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        font: 16px/1.45 "Segoe UI", Arial, sans-serif;
+        background: #101010;
+        color: #efefef;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        display: grid;
+        grid-template-columns: clamp(10rem, 21vw, 15rem) minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        height: 100vh;
+        height: 100dvh;
+        margin: 0;
+      }
+
+      aside {
+        padding: clamp(0.75rem, 2vw, 1.5rem);
+        overflow: auto;
+        border-inline-end: 1px solid #414141;
+        background: #171717;
+      }
+
+      aside h1 {
+        margin: 0 0 1.25rem;
+        font-size: 1rem;
+        font-weight: 650;
+      }
+
+      nav {
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      nav a {
+        display: flex;
+        align-items: center;
+        min-height: 2.75rem;
+        padding: 0.5rem 0.625rem;
+        border: 1px solid transparent;
+        border-radius: 0.5rem;
+        color: inherit;
+        font-size: 0.875rem;
+        text-decoration: none;
+        overflow-wrap: anywhere;
+      }
+
+      nav a:hover {
+        background: #222;
+      }
+
+      nav a[aria-current="page"] {
+        border-color: #5e5e5e;
+        background: #282828;
+        font-weight: 650;
+      }
+
+      nav a:focus-visible {
+        outline: 2px solid #b7b7b7;
+        outline-offset: 2px;
+      }
+
+      main,
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+
+      iframe {
+        display: block;
+      }
+
+      @media (max-width: 40rem) {
+        body {
+          grid-template-columns: clamp(5.5rem, 24vw, 9rem) minmax(0, 1fr);
+        }
+
+        aside {
+          padding-inline: 0.5rem;
+        }
+
+        nav a {
+          padding-inline: 0.375rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <aside>
+      <h1>Web Utilities</h1>
+      <nav id="tool-list" aria-label="Utilities"></nav>
+      <noscript>
+        <p>Enable JavaScript to use the collection.</p>
+      </noscript>
+    </aside>
+    <main>
+      <iframe id="tool-frame" title="Utility" allow="clipboard-write"></iframe>
+    </main>
+    <script>
+      const tools = [
+        {
+          id: "password-generator",
+          name: "Password Generator",
+          path: "password-generator/index.html",
+        },
+      ];
+      const defaultTool = tools[0];
+      const toolList = document.getElementById("tool-list");
+      const toolFrame = document.getElementById("tool-frame");
+      const links = new Map();
+      let activeTool;
+
+      function renderTool() {
+        const id = new URLSearchParams(location.search).get("tool");
+        const tool = tools.find((entry) => entry.id === id) ?? defaultTool;
+        if (activeTool === tool) return;
+
+        if (activeTool) links.get(activeTool).removeAttribute("aria-current");
+        links.get(tool).setAttribute("aria-current", "page");
+        toolFrame.title = tool.name;
+        toolFrame.contentWindow.location.replace(new URL(tool.path, document.baseURI).href);
+        activeTool = tool;
+      }
+
+      for (const tool of tools) {
+        const url = new URL(location.href);
+        url.searchParams.set("tool", tool.id);
+        const link = document.createElement("a");
+        link.href = url.href;
+        link.textContent = tool.name;
+        link.addEventListener("click", (event) => {
+          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+          }
+          event.preventDefault();
+          if (link.href === location.href) return;
+          history.pushState(null, "", link.href);
+          renderTool();
+        });
+        links.set(tool, link);
+        toolList.append(link);
+      }
+
+      window.addEventListener("popstate", renderTool);
+      renderTool();
+    </script>
+  </body>
+</html>
